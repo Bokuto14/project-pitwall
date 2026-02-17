@@ -18,3 +18,26 @@
 [Data Layer]      [Logic Layer]             [Presentation Layer]
 FastF1 API  --->  RaceSimulationEngine  --->  Streamlit UI
 (Raw Laps)        (Tire Deg Models)           (Interactive Graphs)
+
+## 📅 Project Roadmap
+
+### 🏁 Stage 1: The Data Pipeline
+**Goal:** Get clean data for a single race (e.g., Bahrain 2024) and display the actual lap times.
+*   **Task A:** Fetch LapTimes excluding Safety Car laps using `FastF1`.
+*   **Task B:** Clean data (convert string times to float, handle NaNs).
+
+### 🛞 Stage 2: The Physics Engine
+**Goal:** Create the math model that predicts how tires slow down over time.
+*   **Task A:** Implement Linear Degradation Model ($LapTime_{pred} = BasePace + (DegPerLap \times LapAge) - (FuelBurn \times LapNumber)$).
+*   **Task B:** Calculate "Pit Loss" constant.
+
+### 🔮 Stage 3: The "What-If" Logic
+**Goal:** Stitch real data with simulated data.
+*   **Task A:** Build `simulate_strategy(driver, pit_lap, new_compound)`.
+*   **Task B:** Merge "Virtual Driver" back into main dataset.
+
+### 📊 Stage 4: The UI & Deploy
+**Goal:** interactive dashboard.
+*   **Task A:** Build Streamlit Sidebar (Select Race, Driver, Slider for Pit Lap).
+*   **Task B:** Plot "Gap to Leader" graph using Plotly.
+

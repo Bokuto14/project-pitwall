@@ -1,0 +1,4 @@
+fastf1
+streamlit
+pandas
+plotly
