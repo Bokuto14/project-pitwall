@@ -41,3 +41,8 @@ FastF1 API  --->  RaceSimulationEngine  --->  Streamlit UI
 *   **Task A:** Build Streamlit Sidebar (Select Race, Driver, Slider for Pit Lap).
 *   **Task B:** Plot "Gap to Leader" graph using Plotly.
 
+## 📜 Ground Rules
+
+1.  **Clean Data**: Data must be well-labelled and spaced for easy understanding and future editing. Do not complicate the data structure.
+2.  **Ask First**: If unable to access resources or if a decision between two paths is needed, ask the user for clarification.
+3.  **Confirm Steps**: Do not proceed to the next stage without explicit confirmation from the user.
