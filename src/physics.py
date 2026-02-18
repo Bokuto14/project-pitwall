@@ -71,34 +71,35 @@ class PhysicsEngine:
 
     def calculate_tire_degradation(self):
         """
-        Calculates the degradation factor (seconds lost per lap of age) for each compound.
-        Uses Linear Regression: (LapTime + FuelCorr) ~ TyreLife
+        Calculates the degradation model for each compound.
+        Attempts to fit an Exponential function: Time = A * exp(B * Age)
+        This simulates the "Tire Cliff" where performance drops off non-linearly.
         
-        Fuel Correction: 0.06s gained per lap (standard F1 approximation).
+        Returns:
+            dict: {Compound: {'model_type': 'exp'/'linear', 'params': (...)}}
         """
-        print("📉 Calculating Tire Degradation Models...")
+        print("📉 Calculating Tire Degradation Models (Non-Linear)...")
+        from scipy.optimize import curve_fit
         
         compounds = self.data['Compound'].unique()
         deg_models = {}
         
-        FUEL_CORRECTION = 0.06 # Seconds gained per lap due to fuel burn
+        FUEL_CORRECTION = 0.06
         
-        # Default fallbacks if regression fails or returns negative wear (getting faster)
-        # This ensures the strategy engine doesn't suggest infinite stints.
+        # Exponential function to fit: y = a + b * exp(c * x)
+        # a = base pace, b = scale, c = wear rate (cliff steepness)
+        def exp_deg_func(x, a, b, c):
+            return a + b * np.exp(c * x)
+
         defaults = {
-            'SOFT': 0.10,
-            'MEDIUM': 0.06,
-            'HARD': 0.04,
-            'INTERMEDIATE': 0.0,
-            'WET': 0.0
+            'SOFT': 0.10, 'MEDIUM': 0.06, 'HARD': 0.04,
+            'INTERMEDIATE': 0.0, 'WET': 0.0
         }
         
         for compound in compounds:
-            if compound not in defaults: 
-                continue
+            if compound not in defaults: continue
 
-            # Filter data for this compound
-            # Exclude In/Out laps as they are slow/partial
+            # Filter data
             subset = self.data[
                 (self.data['Compound'] == compound) &
                 (self.data['PitInTime'].isna()) &
@@ -106,39 +107,44 @@ class PhysicsEngine:
                 (self.data['LapTimeSeconds'].notna())
             ].copy()
             
-            # Filter outliers (Safety Car laps etc.)
+            # Filter outliers
             if subset.empty:
-                deg_models[compound] = defaults.get(compound, 0.05)
+                deg_models[compound] = {'type': 'linear', 'params': defaults.get(compound)}
                 continue
                 
             min_time = subset['LapTimeSeconds'].min()
             subset = subset[subset['LapTimeSeconds'] < min_time * 1.07]
             
             if len(subset) < 10:
-                print(f"  ⚠️ Not enough data for {compound}. Using default.")
-                deg_models[compound] = defaults.get(compound, 0.05)
+                print(f"  ⚠️ Not enough data for {compound}. Using default linear.")
+                deg_models[compound] = {'type': 'linear', 'params': defaults.get(compound)}
                 continue
 
-            # Linear Regression on Fuel Adjusted Laps
-            # Adjusted = LapTime + (LapNumber * FuelBurn)
-            # This reveals true tire wear by removing the advantage of getting lighter.
+            # Prepare Data (Fuel Adjusted)
             y_adjusted = subset['LapTimeSeconds'] + (subset['LapNumber'] * FUEL_CORRECTION)
-            
-            X = subset[['TyreLife']].values.reshape(-1, 1)
-            y = y_adjusted.values
-            
-            model = LinearRegression()
-            model.fit(X, y)
-            
-            deg_per_lap = model.coef_[0]
-            
-            # Sanity Check: If degradation is still negative (track evolution > wear), 
-            # we must clamp it to a small positive value for the simulation to make sense.
-            if deg_per_lap <= 0:
-                print(f"  ⚠️ {compound} showed negative wear ({deg_per_lap:.3f}). Clamping to default.")
-                deg_per_lap = defaults.get(compound, 0.05)
-            
-            deg_models[compound] = float(f"{deg_per_lap:.3f}")
-            print(f"  👉 {compound}: +{deg_models[compound]} s/lap")
+            x_data = subset['TyreLife'].values
+            y_data = y_adjusted.values
+
+            # Try Exponential Fit
+            try:
+                # Initial guesses: a=min_time, b=0.1, c=0.05
+                popt, _ = curve_fit(exp_deg_func, x_data, y_data, p0=[min_time, 0.1, 0.05], maxfev=1000)
+                
+                # Check if the curve makes sense (c > 0 implies degradation)
+                if popt[2] > 0:
+                    deg_models[compound] = {'type': 'exponential', 'params': popt}
+                    print(f"  👉 {compound}: Exponential Fit (Cliff Detected) | Rate: {popt[2]:.4f}")
+                else:
+                    raise ValueError("Negative wear rate in exp fit")
+                    
+            except Exception as e:
+                # Fallback to Linear if exponential fit fails (or is flat/negative)
+                X = x_data.reshape(-1, 1)
+                model = LinearRegression()
+                model.fit(X, y_data)
+                slope = max(defaults.get(compound, 0.05), model.coef_[0])
+                
+                deg_models[compound] = {'type': 'linear', 'params': slope}
+                print(f"  👉 {compound}: Linear Fit (Fallback) | Slope: {slope:.4f}")
             
         return deg_models

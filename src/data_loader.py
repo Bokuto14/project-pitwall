@@ -54,5 +54,10 @@ def load_race_data(year, grand_prix, session_type='R'):
     # 4. Sort for readability
     clean_laps = clean_laps.sort_values(by=['Driver', 'LapNumber']).reset_index(drop=True)
     
+    # 5. Calculate Cumulative Race Time per Driver
+    # This is crucial for Traffic Analysis (finding where everyone else is at a specific time)
+    # We use transform(cumsum) to keep the dataframe structure
+    clean_laps['RaceTime'] = clean_laps.groupby('Driver')['LapTimeSeconds'].cumsum()
+    
     print(f"Data Loaded: {len(clean_laps)} laps found.")
     return clean_laps

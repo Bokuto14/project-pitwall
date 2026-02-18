@@ -30,16 +30,28 @@ FastF1 API  --->  RaceSimulationEngine  --->  Streamlit UI
 **Goal:** Create the math model that predicts how tires slow down over time.
 *   **Task A:** Implement Linear Degradation Model ($LapTime_{pred} = BasePace + (DegPerLap \times LapAge) - (FuelBurn \times LapNumber)$).
 *   **Task B:** Calculate "Pit Loss" constant.
+*   **Task C:** **[NEW] The Tire "Cliff" (Non-Linear Math):** Replace linear models with Exponential/Sigmoid functions (`Base_Pace * (1 + (Wear_Factor ^ Lap_Count))`) to simulate catastrophic tire drop-off.
 
 ### 🔮 Stage 3: The "What-If" Logic
 **Goal:** Stitch real data with simulated data.
 *   **Task A:** Build `simulate_strategy(driver, pit_lap, new_compound)`.
 *   **Task B:** Merge "Virtual Driver" back into main dataset.
 
+### 🚀 Stage 3.5: The "Context" Layer (The Complexity Spike)
+**Goal:** Make the simulation aware of other cars (Multi-Agent Simulation).
+*   **Task A (Traffic Injection):** "Traffic Check" function. Only assume "Clean Air" pace if the gap to the car ahead is > 1.5s.
+    *   **Logic:** If `Predicted_Pos` overlaps `Rival_Pos`:
+    *   `Max_Speed = min(My_Pace, Rival_Pace)`
+    *   `Penalty = +0.5s (Dirty Air)`
+*   **Task B (The Undercut Logic):** accurate calculation of the "Out Lap" (cold tires).
+
 ### 📊 Stage 4: The UI & Deploy
 **Goal:** interactive dashboard.
 *   **Task A:** Build Streamlit Sidebar (Select Race, Driver, Slider for Pit Lap).
 *   **Task B:** Plot "Gap to Leader" graph using Plotly.
+*   **Task C:** **[NEW] Pit Window Visualization:** A "Traffic Light" bar chart showing gaps to cars behind.
+    *   🟢 **Green Zone:** Clear air (Pit now!)
+    *   🔴 **Red Zone:** Traffic / DRS Train (Do not pit!)
 
 ## 📜 Ground Rules
 
