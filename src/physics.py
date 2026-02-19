@@ -3,8 +3,13 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 
 class PhysicsEngine:
-    def __init__(self, race_data):
-        self.data = race_data
+    def __init__(self, data_dict):
+        # Check if we got a dict (new format) or DataFrame (fallback/legacy)
+        if isinstance(data_dict, dict):
+            self.data = data_dict['laps']
+            self.full_data = data_dict
+        else:
+            self.data = data_dict
 
     def calculate_pit_loss(self):
         """

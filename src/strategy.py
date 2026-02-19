@@ -2,8 +2,12 @@ import pandas as pd
 import numpy as np
 
 class StrategyEngine:
-    def __init__(self, race_data, physics_engine):
-        self.data = race_data
+    def __init__(self, data_dict, physics_engine):
+        if isinstance(data_dict, dict):
+            self.data = data_dict['laps']
+            self.full_data = data_dict
+        else:
+            self.data = data_dict
         self.physics = physics_engine
         
         # Pre-calculate constants

@@ -11,14 +11,15 @@ def main():
     
     # Test Case: Bahrain 2024
     try:
-        race_data = load_race_data(2024, 'Bahrain')
+        data_dict = load_race_data(2024, 'Bahrain')
+        race_data = data_dict['laps']
         
         if race_data.empty:
             print("❌ No data loaded.")
             return
 
         # Initialize Physics Engine
-        physics = PhysicsEngine(race_data)
+        physics = PhysicsEngine(data_dict)
         
         # 1. Calculate Pit Loss
         pit_loss = physics.calculate_pit_loss()
@@ -39,7 +40,7 @@ def main():
         # 3. Simulate Strategy (Stage 3 Verification)
         print("\n--- 🔮 Strategy Simulation Test ---")
         from src.strategy import StrategyEngine
-        strategy = StrategyEngine(race_data, physics)
+        strategy = StrategyEngine(data_dict, physics)
         
         # Test: Simulate VER starting on Softs, pitting Lap 15 (Standard Strategy)
         sim_results = strategy.simulate_strategy('VER', 15, 'SOFT', 'HARD')
